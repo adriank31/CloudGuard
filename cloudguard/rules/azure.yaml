@@ -1,0 +1,48 @@
+# Azure RBAC rules.
+#
+# Same format as the AWS file - see the header there for the full rundown of
+# the `match` vs `check` styles and the available operators.
+#
+# Azure's model is role assignments (a principal bound to a role at a scope)
+# plus custom role definitions, so the resource_types differ from AWS.
+
+- id: AZURE_IAM_001
+  title: Privileged role assigned at subscription scope
+  severity: high
+  provider: azure
+  resource_type: role_assignment
+  description: >
+    A broad built-in role (Owner, Contributor or User Access Administrator) is
+    assigned at the subscription level. That hands the principal control over
+    everything in the subscription, and Owner / User Access Administrator can
+    also grant access to others - a ready-made privilege-escalation path.
+  remediation: >
+    Move the assignment down to the narrowest scope that still works (a single
+    resource group or resource), and swap the broad built-in role for a
+    predefined or custom role that only covers what the principal needs.
+  match:
+    field: is_privileged_at_subscription
+    op: eq
+    value: true
+  references:
+    - "Azure RBAC best practices: assign roles at the smallest scope"
+
+- id: AZURE_IAM_002
+  title: Custom role grants wildcard actions
+  severity: high
+  provider: azure
+  resource_type: custom_role
+  description: >
+    This custom role definition includes "*" in its allowed actions, which
+    effectively makes it an admin role for its assignable scope no matter how
+    narrowly it is later assigned.
+  remediation: >
+    Enumerate the specific operations the role's users actually perform and list
+    those actions explicitly. Reserve "*" for genuine break-glass roles that are
+    tightly controlled and audited.
+  match:
+    field: has_wildcard_action
+    op: eq
+    value: true
+  references:
+    - "Azure custom roles: define least-privilege action sets"

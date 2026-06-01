@@ -1,0 +1,76 @@
+{
+  "iam_user": [
+    {
+      "name": "root-break-glass",
+      "arn": "arn:aws:iam::123456789012:user/root-break-glass",
+      "id": "AIDAEXAMPLE0001",
+      "created": "2022-03-01T10:00:00+00:00",
+      "mfa_enabled": false,
+      "has_admin": true,
+      "admin_source": "AdministratorAccess (managed)"
+    },
+    {
+      "name": "ci-deployer",
+      "arn": "arn:aws:iam::123456789012:user/ci-deployer",
+      "id": "AIDAEXAMPLE0002",
+      "created": "2023-06-15T09:30:00+00:00",
+      "mfa_enabled": true,
+      "has_admin": true,
+      "admin_source": "inline policy deploy-all (*:* allow)"
+    },
+    {
+      "name": "analyst-readonly",
+      "arn": "arn:aws:iam::123456789012:user/analyst-readonly",
+      "id": "AIDAEXAMPLE0003",
+      "created": "2024-01-20T14:00:00+00:00",
+      "mfa_enabled": true,
+      "has_admin": false,
+      "admin_source": ""
+    }
+  ],
+  "access_key": [
+    {
+      "id": "AKIAOLDKEY00000EXAMPLE",
+      "user": "root-break-glass",
+      "status": "Active",
+      "created": "2022-03-01T10:05:00+00:00",
+      "age_days": 820
+    },
+    {
+      "id": "AKIASTALEKEY000EXAMPLE",
+      "user": "ci-deployer",
+      "status": "Inactive",
+      "created": "2025-03-01T09:35:00+00:00",
+      "age_days": 60
+    },
+    {
+      "id": "AKIAFRESHKEY000EXAMPLE",
+      "user": "analyst-readonly",
+      "status": "Active",
+      "created": "2025-04-01T00:00:00+00:00",
+      "age_days": 12
+    }
+  ],
+  "policy_statement": [
+    {
+      "policy_name": "deploy-all",
+      "attached_to": "arn:aws:iam::123456789012:policy/deploy-all",
+      "effect": "Allow",
+      "document": {
+        "Effect": "Allow",
+        "Action": "*",
+        "Resource": "*"
+      }
+    },
+    {
+      "policy_name": "s3-read-reports",
+      "attached_to": "arn:aws:iam::123456789012:policy/s3-read-reports",
+      "effect": "Allow",
+      "document": {
+        "Effect": "Allow",
+        "Action": ["s3:GetObject", "s3:ListBucket"],
+        "Resource": "arn:aws:s3:::reports-bucket/*"
+      }
+    }
+  ]
+}

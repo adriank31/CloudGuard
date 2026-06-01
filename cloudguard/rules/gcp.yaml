@@ -1,0 +1,44 @@
+# GCP IAM rules.
+#
+# Same format as the AWS and Azure files. GCP IAM is a set of bindings on a
+# project (a role paired with members), so we explode those into one resource
+# per role/member pair and the rules below match against those.
+
+- id: GCP_IAM_001
+  title: IAM binding grants access to the public
+  severity: high
+  provider: gcp
+  check: gcp_public_member
+  description: >
+    A binding grants a role to allUsers or allAuthenticatedUsers - that is the
+    open internet (or anyone with any Google account). On a project-level
+    binding this is almost never intended and is a direct route to data
+    exposure. If the public member also holds a primitive role this finding is
+    escalated to critical, because then the whole internet has broad rights.
+  remediation: >
+    Remove the allUsers / allAuthenticatedUsers member from the binding. If some
+    resource genuinely needs to be public, expose only that resource explicitly
+    rather than granting a project-wide role to a public member.
+  references:
+    - "GCP IAM: avoid allUsers and allAuthenticatedUsers grants"
+
+- id: GCP_IAM_002
+  title: Primitive role in use
+  severity: medium
+  provider: gcp
+  resource_type: iam_binding
+  description: >
+    The binding uses a legacy primitive role (roles/owner, roles/editor or
+    roles/viewer). Primitive roles are coarse and grant far more than most
+    workloads need - Google itself recommends predefined or custom roles
+    instead.
+  remediation: >
+    Replace the primitive role with a predefined role that matches the
+    principal's actual job, or a custom role if no predefined one fits. Owner in
+    particular should be limited to a very small set of break-glass identities.
+  match:
+    field: is_primitive_role
+    op: eq
+    value: true
+  references:
+    - "GCP IAM: use predefined or custom roles over primitive roles"

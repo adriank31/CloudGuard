@@ -1,0 +1,85 @@
+# AWS IAM rules.
+#
+# Each entry below is one rule. Two styles are in play:
+#
+#   * Rules with a `check:` hand off to a Python function in core/checks.py for
+#     logic that needs to cross-reference data (admin status vs MFA, parsing a
+#     policy document).
+#
+#   * Rules with a `match:` are evaluated by the engine directly - it walks
+#     every resource of `resource_type` and compares one field against a value
+#     using the given operator (eq, ne, gt, gte, lt, lte, in, contains, exists,
+#     regex). No Python needed, so adding coverage is just editing this file.
+#
+# severity is one of: critical, high, medium, low, info.
+
+- id: AWS_IAM_001
+  title: IAM user has administrative access without MFA
+  severity: critical
+  provider: aws
+  check: aws_admin_without_mfa
+  description: >
+    This user can perform any action in the account but logs in with a password
+    alone. A single phished or reused credential here is a full account
+    takeover, which is why it outranks every other IAM finding.
+  remediation: >
+    Attach and enforce an MFA device for this user immediately, or remove the
+    administrative policy if the access is not actually needed. For day-to-day
+    work prefer assuming a role over standing admin rights on a user.
+  references:
+    - "CIS AWS Foundations: MFA for users with console access"
+
+- id: AWS_IAM_002
+  title: Policy allows all actions on all resources
+  severity: high
+  provider: aws
+  check: aws_wildcard_policy
+  description: >
+    The policy contains an Allow statement granting Action "*" on Resource "*".
+    That is unrestricted access scoped to whoever the policy is attached to and
+    almost always wider than intended.
+  remediation: >
+    Replace the wildcard with the specific actions and resource ARNs the
+    workload actually uses. If broad access really is required, scope it with
+    conditions (source IP, MFA present, tag match) rather than leaving it open.
+  references:
+    - "AWS IAM best practices: grant least privilege"
+
+- id: AWS_IAM_003
+  title: Access key older than 90 days
+  severity: medium
+  provider: aws
+  resource_type: access_key
+  description: >
+    Long-lived access keys are a standing liability - the longer one exists the
+    more places it has likely been copied (laptops, CI config, scripts) and the
+    higher the odds it has leaked somewhere.
+  remediation: >
+    Rotate the key: create a new one, update whatever uses it, confirm the new
+    key works, then delete the old one. Better still, move the workload to
+    short-lived role credentials so there is no long-lived key to rotate.
+  match:
+    field: age_days
+    op: gt
+    value: 90
+  references:
+    - "CIS AWS Foundations: rotate access keys every 90 days"
+
+- id: AWS_IAM_004
+  title: Inactive access key still present
+  severity: low
+  provider: aws
+  resource_type: access_key
+  description: >
+    The key is disabled but not deleted. A disabled key is one click away from
+    being re-enabled and is one more secret sitting around to be leaked. Stale
+    credentials should be removed, not just parked.
+  remediation: >
+    If the key is genuinely unused, delete it. Deactivating is fine as a brief
+    safety step before deletion, but it should not be the permanent state.
+  match:
+    field: status
+    op: eq
+    value: Inactive
+  references:
+    - "CIS AWS Foundations: remove unused credentials"
