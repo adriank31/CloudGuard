@@ -1,0 +1,7 @@
+# Core dependency. PyYAML is what parses the rule files, and it's the only
+# thing every run needs regardless of which cloud you scan.
+PyYAML>=6.0
+
+# The cloud SDKs are intentionally NOT listed here. They're optional extras so
+# you only pull in the one you actually use - see setup.py [aws]/[azure]/[gcp].
+# Install them with, e.g.:  pip install -e ".[aws]"
